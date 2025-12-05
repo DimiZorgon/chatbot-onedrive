@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       // Cache le loader si présent
       if (loader) {
-        loader.style.display = "null";
+        loader.style.display = "none";
       }
       input.value = "";
     }
