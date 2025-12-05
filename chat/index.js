@@ -10,9 +10,7 @@ const systemMessage = "Vous êtes un assistant utile et concis spécialisé dans
 
 // Vérification des configurations au démarrage
 if (!endpoint || !apiKey || !deploymentName) {
-    // Cette vérification lève une erreur au démarrage pour signaler un problème de configuration.
-    console.error("CONFIGURATION MANQUANTE : Veuillez définir AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY et AZURE_OPENAI_DEPLOYMENT_NAME.");
-    throw new Error("Erreur de configuration critique : Clés Azure OpenAI manquantes ou client non initialisé.");
+    throw new Error("Erreur de configuration critique...");
 }
 
 // Initialisation du client OpenAI
