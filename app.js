@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        "https://chatbot-api-onedrive-bpbzcuenbrf4ezbj.francecentral-01.azurewebsites.net/api/chat",
+        "https://chatbot-api-onedrive.azurewebsites.net/api/chat",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
