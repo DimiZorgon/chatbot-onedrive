@@ -4,6 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const messages = document.getElementById("messages");
   const loader = document.getElementById("loader");
 
+  if (!form || !input || !messages) {
+    console.error("Certains éléments du DOM sont introuvables.");
+    return;
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const userInput = input.value.trim();
@@ -15,15 +20,20 @@ document.addEventListener("DOMContentLoaded", () => {
     userMessage.textContent = userInput;
     messages.appendChild(userMessage);
 
-    // Affiche le loader
-    loader.style.display = "block";
+    // Affiche le loader si présent
+    if (loader) {
+      loader.style.display = "block";
+    }
 
     try {
-      const response = await fetch("https://chatbot-api-onedrive-bpbzcuenbrf4ezbj.francecentral-01.azurewebsites.net/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userInput })
-      });
+      const response = await fetch(
+        "https://chatbot-api-onedrive-bpbzcuenbrf4ezbj.francecentral-01.azurewebsites.net/api/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: userInput })
+        }
+      );
 
       const data = await response.json();
       console.log("Réponse brute de l'API :", data);
@@ -40,7 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
       errorMessage.textContent = "Erreur de connexion au serveur.";
       messages.appendChild(errorMessage);
     } finally {
-      loader.style.display = "none";
+      // Cache le loader si présent
+      if (loader) {
+        loader.style.display = "null";
+      }
       input.value = "";
     }
   });
