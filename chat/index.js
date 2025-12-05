@@ -2,17 +2,16 @@ const { app } = require('@azure/functions');
 const { OpenAIClient, AzureKeyCredential } = require('@azure/openai'); 
 
 // --- Récupération des variables d'environnement ---
-// Ces variables sont lues depuis la configuration de votre Function App
+// Celles-ci sont lues depuis la configuration de votre Function App (Configuration > Application settings)
 const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
 const apiKey = process.env.AZURE_OPENAI_API_KEY;
 const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME; 
 const systemMessage = "Vous êtes un assistant utile et concis spécialisé dans OneDrive et les services Microsoft 365."; 
 
-// Vérification des configurations pour éviter le RpcException si une clé est manquante au démarrage
+// Vérification des configurations au démarrage
 if (!endpoint || !apiKey || !deploymentName) {
-    // Si une variable est manquante, lever une exception claire.
-    // L'erreur sera logguée dans Azure.
-    console.error("CONFIGURATION MANQUANTE : Veuillez définir AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY et AZURE_OPENAI_DEPLOYMENT_NAME dans les Application Settings.");
+    // Cette vérification lève une erreur au démarrage pour signaler un problème de configuration.
+    console.error("CONFIGURATION MANQUANTE : Veuillez définir AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY et AZURE_OPENAI_DEPLOYMENT_NAME.");
     throw new Error("Erreur de configuration critique : Clés Azure OpenAI manquantes ou client non initialisé.");
 }
 
@@ -30,7 +29,7 @@ app.http('chat', {
         
         // 1. Extraction du Prompt de la requête HTTP
         try {
-            // Le frontend envoie un corps JSON du type { prompt: "..." }
+            // Lecture du corps JSON (le frontend envoie { prompt: "..." })
             const body = await request.json();
             prompt = body.prompt;
         } catch (error) {
@@ -67,7 +66,7 @@ app.http('chat', {
             }
 
         } catch (apiError) {
-            // 3. Gérer l'erreur API et la renvoyer proprement au frontend
+            // 3. Gérer l'erreur API
             context.error("Erreur lors de l'appel à l'API Azure OpenAI:", apiError);
             return { 
                 status: 500, 
@@ -76,7 +75,7 @@ app.http('chat', {
             };
         }
 
-        // 4. Succès : Retourner la réponse au format JSON attendu par le frontend
+        // 4. Succès : Retourner la réponse au format JSON attendu
         return { 
             status: 200, 
             headers: { 'Content-Type': 'application/json' },
