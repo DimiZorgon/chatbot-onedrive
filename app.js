@@ -1,37 +1,47 @@
-async function init() {
-  const messagesEl = document.getElementById('messages');
-  const form = document.getElementById('chat-form');
-  const promptEl = document.getElementById('prompt');
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("user-input");
+  const messages = document.getElementById("messages");
+  const loader = document.getElementById("loader");
 
-  function addMessage(text, role) {
-    const div = document.createElement('div');
-    div.className = role;
-    div.textContent = text;
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const prompt = promptEl.value.trim();
-    if (!prompt) return;
-    addMessage(prompt, 'user');
-    promptEl.value = '';
+    const userInput = input.value.trim();
+    if (!userInput) return;
+
+    // Affiche le message utilisateur
+    const userMessage = document.createElement("div");
+    userMessage.className = "message user";
+    userMessage.textContent = userInput;
+    messages.appendChild(userMessage);
+
+    // Affiche le loader
+    loader.style.display = "block";
 
     try {
-      const res = await fetch("https://chatbot-api-onedrive.azurewebsites.net/api/chat", {
+      const response = await fetch("https://chatbot-api-onedrive-bpbzcuenbrf4ezbj.francecentral-01.azurewebsites.net/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt: userInput })
       });
 
-      const data = await res.json();
-      console.log("Réponse brute de l'API :", data); // Debug dans la console navigateur
-      addMessage(data.answer ?? '(Pas de réponse)', 'assistant');
-    } catch (err) {
-      addMessage(`Erreur: ${err.message}`, 'assistant');
+      const data = await response.json();
+      console.log("Réponse brute de l'API :", data);
+
+      // Affiche la réponse du bot
+      const botMessage = document.createElement("div");
+      botMessage.className = "message bot";
+      botMessage.textContent = data.answer || "Pas de réponse reçue.";
+      messages.appendChild(botMessage);
+    } catch (error) {
+      console.error("Erreur lors de l'appel à l'API :", error);
+      const errorMessage = document.createElement("div");
+      errorMessage.className = "message error";
+      errorMessage.textContent = "Erreur de connexion au serveur.";
+      messages.appendChild(errorMessage);
+    } finally {
+      loader.style.display = "none";
+      input.value = "";
     }
   });
-}
-
-init();
+});
