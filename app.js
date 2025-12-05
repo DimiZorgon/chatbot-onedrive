@@ -27,13 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        "https://chatbot-api-onedrive.azurewebsites.net/api/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: userInput })
-        }
-      );
+      "https://chatbot-api-onedrive.azurewebsites.net/api/chat", 
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: userInput })
+      }
+    );
 
       // 🛑 CORRECTION ICI : Vérifie le statut HTTP avant de tenter response.json()
       if (!response.ok) {
