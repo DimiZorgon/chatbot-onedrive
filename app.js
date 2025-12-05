@@ -35,6 +35,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
+      // 🛑 CORRECTION ICI : Vérifie le statut HTTP avant de tenter response.json()
+      if (!response.ok) {
+        // Tente d'analyser le JSON pour récupérer le message d'erreur du backend (s'il existe)
+        const errorData = await response.json().catch(() => ({ answer: `Erreur HTTP ${response.status}: Le serveur a renvoyé une erreur.` }));
+        
+        // Affiche l'erreur
+        const errorMessage = document.createElement("div");
+        errorMessage.className = "message error";
+        errorMessage.textContent = errorData.answer || errorData.error || `Erreur de connexion au serveur (${response.status}).`;
+        messages.appendChild(errorMessage);
+        
+        // Arrête le traitement pour ne pas exécuter la ligne 47 (response.json())
+        return;
+      }
+      
+      // Ligne 47 : S'exécute uniquement si le statut est 2xx
       const data = await response.json();
       console.log("Réponse brute de l'API :", data);
 
@@ -44,13 +60,14 @@ document.addEventListener("DOMContentLoaded", () => {
       botMessage.textContent = data.answer || "Pas de réponse reçue.";
       messages.appendChild(botMessage);
     } catch (error) {
+      // Catch les erreurs de réseau
       console.error("Erreur lors de l'appel à l'API :", error);
-      const errorMessage = document.createElement("div");
-      errorMessage.className = "message error";
-      errorMessage.textContent = "Erreur de connexion au serveur.";
-      messages.appendChild(errorMessage);
+      const networkErrorMessage = document.createElement("div");
+      networkErrorMessage.className = "message error";
+      networkErrorMessage.textContent = "Erreur de connexion (problème réseau ou serveur injoignable).";
+      messages.appendChild(networkErrorMessage);
     } finally {
-      // Cache le loader si présent
+      // Correction du loader
       if (loader) {
         loader.style.display = "none";
       }
