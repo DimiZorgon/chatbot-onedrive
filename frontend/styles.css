@@ -1,0 +1,8 @@
+body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+main { max-width: 800px; margin: 0 auto; padding: 24px; }
+#messages { display: grid; gap: 12px; margin-bottom: 16px; }
+.user { background: #1f2937; padding: 12px; border-radius: 8px; }
+.assistant { background: #111827; padding: 12px; border-radius: 8px; }
+form { display: flex; gap: 8px; }
+input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; }
+button { padding: 10px 16px; border: none; border-radius: 8px; background: #22c55e; color: #0b1220; font-weight: 600; }
