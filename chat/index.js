@@ -1,30 +1,37 @@
 const { app } = require('@azure/functions');
-const { OpenAIClient, AzureKeyCredential } = require('@azure/openai'); 
+const OpenAI = require('openai');
+const { AzureOpenAI } = require('openai');
+
 
 // --- Récupération des variables d'environnement ---
 // Celles-ci sont lues depuis la configuration de votre Function App (Configuration > Application settings)
 const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
 const apiKey = process.env.AZURE_OPENAI_API_KEY;
-const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME; 
-const systemMessage = "Vous êtes un assistant utile et concis spécialisé dans OneDrive et les services Microsoft 365."; 
+const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+const systemMessage = "Vous êtes un assistant utile et concis spécialisé dans OneDrive et les services Microsoft 365.";
 
-// Vérification des configurations au démarrage
-if (!endpoint || !apiKey || !deploymentName) {
-    throw new Error("Erreur de configuration critique...");
+// Vérification des configurations au démarrage -> lister précisément ce qui manque
+const missingEnv = [];
+if (!endpoint) missingEnv.push('AZURE_OPENAI_ENDPOINT');
+if (!apiKey) missingEnv.push('AZURE_OPENAI_API_KEY');
+if (!deploymentName) missingEnv.push('AZURE_OPENAI_DEPLOYMENT_NAME');
+if (missingEnv.length > 0) {
+    throw new Error(`Erreur de configuration critique - variables manquantes: ${missingEnv.join(', ')}`);
 }
 
 // Initialisation du client OpenAI
-const client = new OpenAIClient(
-    endpoint,
-    new AzureKeyCredential(apiKey)
-);
+const client = new AzureOpenAI({
+    apiKey: apiKey,
+    apiVersion: "2024-02-15-preview",
+    baseURL: `${endpoint}/openai/deployments/${deploymentName}`,
+});
 
 app.http('chat', {
     methods: ['POST'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
         let prompt = '';
-        
+
         // 1. Extraction du Prompt de la requête HTTP
         try {
             // Lecture du corps JSON (le frontend envoie { prompt: "..." })
@@ -36,7 +43,7 @@ app.http('chat', {
         }
 
         if (!prompt) {
-             return { status: 400, body: 'Missing "prompt" field in request body.' };
+            return { status: 400, body: 'Missing "prompt" field in request body.' };
         }
 
         context.log(`Prompt reçu: ${prompt}`);
@@ -49,33 +56,41 @@ app.http('chat', {
                 { role: "user", content: prompt }
             ];
 
-            const response = await client.getChatCompletions(
-                deploymentName,
-                messages,
-                { temperature: 0.7 }
-            );
-            
-            // Extraction de la réponse
-            if (response.choices && response.choices.length > 0) {
-                botAnswer = response.choices[0].message.content;
+            const response = await client.chat.completions.create({
+                model: deploymentName,
+                messages: messages,
+                temperature: 0.7
+            });
+
+            context.log('OpenAI response (raw):', response);
+
+            // Extraction robuste de la réponse
+            const choice = response?.choices && response.choices[0];
+            if (choice) {
+                botAnswer = choice.message?.content ?? "L'IA n'a pas renvoyé de contenu.";
             } else {
-                context.warn("Réponse OpenAI reçue mais sans contenu de choix.");
+                context.warn("Réponse OpenAI reçue mais sans 'choices'.", response);
                 botAnswer = "L'IA n'a pas pu générer de réponse.";
             }
 
         } catch (apiError) {
-            // 3. Gérer l'erreur API
+            // 3. Gérer l'erreur API tout en renvoyant des informations utiles pour le debugging
             context.error("Erreur lors de l'appel à l'API Azure OpenAI:", apiError);
-            return { 
-                status: 500, 
+
+            // Essayer d'extraire des informations utiles (sans exposer de secret)
+            const errorMessage = apiError?.message || String(apiError);
+            const statusCode = apiError?.statusCode ?? apiError?.status ?? null;
+
+            return {
+                status: 500,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: `Erreur du serveur (OpenAI) : ${apiError.message}` })
+                body: JSON.stringify({ error: `OpenAI error: ${errorMessage}`, statusCode })
             };
         }
 
         // 4. Succès : Retourner la réponse au format JSON attendu
-        return { 
-            status: 200, 
+        return {
+            status: 200,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ answer: botAnswer }) // Le frontend attend "answer"
         };
